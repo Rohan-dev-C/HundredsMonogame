@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using System;
 using System.Collections.Generic;
 
 namespace HundredsMonogame
@@ -24,10 +25,7 @@ namespace HundredsMonogame
         SpriteFont font;
 
         bool GameStarted = false;
-
-        bool isPressed;
-
-        bool ballSelected; 
+        Random random = new Random();
 
 
         void newLevel(ref int levelNum, ref List<Ball> ball)
@@ -36,7 +34,9 @@ namespace HundredsMonogame
             levelNum++;
             for(int i = 0; i < levelNum; i++)
             {
-                ball.Add(new Ball(new Vector2(100 * i + 5, 100 * i + 5), ballTexture, Color.Black, new Vector2(0.3f, 0.3f), 0, new Vector2(5,4), false));
+                int startingPosY = random.Next(0, 8);
+                int startingPosX = random.Next(0, 8); 
+                ball.Add(new Ball(new Vector2(100 * startingPosX, 100 * startingPosY), ballTexture, Color.DarkOrchid, new Vector2(0.3f, 0.3f), 0, new Vector2(5,4), false, font));
             }
         }
 
@@ -54,7 +54,6 @@ namespace HundredsMonogame
             graphics.PreferredBackBufferHeight = 1000;
             graphics.ApplyChanges();
             base.Initialize();
-
         }
 
         protected override void LoadContent()
@@ -86,18 +85,56 @@ namespace HundredsMonogame
                 balls[i].UpdateBall(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             }
 
-            if(ks.IsKeyDown(Keys.LeftShift))
+            MouseState ms = Mouse.GetState(); 
+            for (int i = 0; i < balls.Count; i++)
             {
-                isPressed = true; 
+                if (ms.LeftButton == ButtonState.Pressed && balls[i].Hitbox.Contains(ms.Position))
+                {
+                    for (int j = 0; j < balls.Count; j++)
+                    {
+                        balls[j].Selected = false;
+                    }
+                    balls[i].Selected = true;
+                }
+                else if (ms.LeftButton == ButtonState.Released)
+                {
+                    balls[i].Selected = false; 
+                }
             }
-            else if(!ks.IsKeyDown(Keys.LeftShift))
+            for (int i = 0; i < balls.Count; i++)
             {
-                isPressed = false; 
+                if (balls[i].Selected)
+                {
+                    balls[i].value++;
+                    balls[i].scale.X += 0.02f;
+                    balls[i].scale.Y += 0.02f; 
+                }
             }
+            int total = 0; 
+            for (int i = 0; i < balls.Count; i++)
+            {
+                total += balls[i].value; 
 
+                
+            }
+            if (total > 100)
+            {
+                newLevel(ref levelNumber, ref balls); 
+            }
+            for (int i = 0; i < balls.Count; i++)
+            {
+                for (int j = 0; j < balls.Count; j++)
+                {
+                    if (balls[i].IsColliding(balls[j]))
+                    {
+                        Vector2 speed = balls[i].speed;
+                        balls[i].speed = balls[j].speed;
+                        balls[j].speed = speed; 
 
-
-
+                    }
+                }
+            }
+          
             base.Update(gameTime);
         }
 
@@ -106,6 +143,8 @@ namespace HundredsMonogame
             GraphicsDevice.Clear(Color.DarkSlateGray);
             spriteBatch.Begin();
             // TODO: Add your drawing code here
+            spriteBatch.DrawString(font, levelNumber.ToString(), new Vector2(0, 0), Color.White);
+            spriteBatch.DrawString(font, balls.Count.ToString(), new Vector2(0, 40), Color.White);
 
             if (GameStarted == false)
             {
@@ -118,10 +157,7 @@ namespace HundredsMonogame
                 {
                     balls[i].Draw(spriteBatch);
                 }
-                if(ballSelected == false)
-                {
-                    spriteBatch.DrawString(font, "Please Select a Ball", new Vector2(300, 50), Color.Black);
-                }
+      
             }
 
             spriteBatch.End(); 

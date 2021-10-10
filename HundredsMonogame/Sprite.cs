@@ -43,7 +43,7 @@ namespace HundredsMonogame
         }
 
 
-        public void Draw(SpriteBatch spriteBatch)
+        public virtual void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(texture, position, null, color, rotation, origin, scale, effects, 0);
         }
